@@ -262,7 +262,7 @@ def Nab_dec(
     florderloc: npt.NDArray[np.int_],
     use_std_adjustment: bool = True,
     adjustment_factor: float = 0.5
-) -> Tuple[npt.NDArray[np.int_], npt.NDArray[np.int_]]:
+) -> Tuple[npt.NDArray[np.int_], npt.NDArray[np.int_], dict]:
     """
     Determine the number of abnormal merges to cut based on torque analysis.
     
@@ -275,12 +275,31 @@ def Nab_dec(
         adjustment_factor: Factor to multiply standard deviation for threshold adjustment (default: 0.5)
     
     Returns:
-        Tuple of (NAB, resolution) arrays
+        Tuple containing:
+            - NAB: Indices where the combined index equals the maximum value
+            - resolution: Indices that satisfy the criteria
+            - diagnostics: Dictionary containing threshold calculations and intermediate values
     """
     # Convert inputs to float64 for consistency with MATLAB
     p = np.float64(p)
     mass = np.float64(mass)
     R = np.float64(R)
+    
+    # Initialize diagnostics dictionary
+    diagnostics = {
+        'input_stats': {
+            'p_min': float(np.nanmin(p)),
+            'p_max': float(np.nanmax(p)),
+            'mass_min': float(np.nanmin(mass)),
+            'mass_max': float(np.nanmax(mass)),
+            'R_min': float(np.nanmin(R)),
+            'R_max': float(np.nanmax(R))
+        },
+        'parameters': {
+            'use_std_adjustment': use_std_adjustment,
+            'adjustment_factor': adjustment_factor
+        }
+    }
     
     # Sort values in descending order
     sort_p_1, ind1 = matlab_sort(p)
@@ -292,26 +311,52 @@ def Nab_dec(
     mass_mean = matlab_mean(sort_mass_1)
     R_mean = matlab_mean(sort_R_1)
     
-    # Calculate standard deviations if using std adjustment
+    # Store mean values
+    diagnostics['means'] = {
+        'p_mean': float(p_mean),
+        'mass_mean': float(mass_mean),
+        'R_mean': float(R_mean)
+    }
+    
+    # Calculate and store standard deviations
+    p_std = np.nanstd(sort_p_1)
+    mass_std = np.nanstd(sort_mass_1)
+    R_std = np.nanstd(sort_R_1)
+    
+    diagnostics['standard_deviations'] = {
+        'p_std': float(p_std),
+        'mass_std': float(mass_std),
+        'R_std': float(R_std)
+    }
+    
+    # Calculate thresholds
     if use_std_adjustment:
-        p_std = np.nanstd(sort_p_1)
-        mass_std = np.nanstd(sort_mass_1)
-        R_std = np.nanstd(sort_R_1)
-        
-        # Adjust thresholds using standard deviation
         R_threshold = R_mean - adjustment_factor * R_std
         mass_threshold = mass_mean - adjustment_factor * mass_std
         p_threshold = p_mean - adjustment_factor * p_std
     else:
-        # Use means directly as thresholds
         R_threshold = R_mean
         mass_threshold = mass_mean
         p_threshold = p_mean
+    
+    # Store threshold values
+    diagnostics['thresholds'] = {
+        'R_threshold': float(R_threshold),
+        'mass_threshold': float(mass_threshold),
+        'p_threshold': float(p_threshold)
+    }
     
     # Identify points that meet criteria with adjusted thresholds
     a = (sort_R_1 >= R_threshold)
     b = (sort_mass_1 >= mass_threshold)
     c = (sort_p_1 >= p_threshold)
+    
+    # Store criteria results
+    diagnostics['criteria_counts'] = {
+        'points_above_R_threshold': int(np.sum(a)),
+        'points_above_mass_threshold': int(np.sum(b)),
+        'points_above_p_threshold': int(np.sum(c))
+    }
     
     # Combine criteria with improved noise handling
     d = matlab_logical_and(a, b, c)
@@ -319,15 +364,33 @@ def Nab_dec(
     # Find indices that satisfy all criteria
     resolution = np.where(d)[0]
     
+    # Store resolution information
+    diagnostics['resolution'] = {
+        'points_satisfying_all_criteria': len(resolution),
+        'resolution_indices': resolution.tolist()
+    }
+    
     # Calculate combined index for cluster determination
     if len(resolution) > 0:
         combined_index = ind1[resolution]
         max_index = np.nanmax(combined_index)
         NAB = resolution[combined_index == max_index]
+        
+        # Store NAB information
+        diagnostics['NAB'] = {
+            'size': len(NAB),
+            'indices': NAB.tolist(),
+            'max_index': int(max_index)
+        }
     else:
         NAB = np.array([], dtype=np.int_)
+        diagnostics['NAB'] = {
+            'size': 0,
+            'indices': [],
+            'max_index': None
+        }
     
-    return NAB, resolution
+    return NAB, resolution, diagnostics
 
 
 def validate_with_test_case(test_p, test_mass, test_R, test_florderloc):
@@ -348,7 +411,7 @@ def validate_with_test_case(test_p, test_mass, test_R, test_florderloc):
     print(f"florderloc: {test_florderloc}")
     
     # Run the algorithm
-    NAB, resolution = Nab_dec(test_p, test_mass, test_R, test_florderloc)
+    NAB, resolution, diagnostics = Nab_dec(test_p, test_mass, test_R, test_florderloc)
     
     print("\nResults:")
     print(f"NAB: {NAB}")
@@ -369,5 +432,5 @@ def validate_with_test_case(test_p, test_mass, test_R, test_florderloc):
     print(f"ind1: {ind1}")
     
     # Return results for comparison
-    return NAB, resolution
+    return NAB, resolution, diagnostics
 
