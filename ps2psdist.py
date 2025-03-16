@@ -1,6 +1,12 @@
+from typing import Union, List, Sequence
 import numpy as np
+import numpy.typing as npt
 
-def ps2psdist(Loc_dataset1, Loc_dataset2, DM):
+def ps2psdist(
+    Loc_dataset1: Union[List[int], npt.NDArray[np.int_]],
+    Loc_dataset2: Union[List[int], npt.NDArray[np.int_]],
+    DM: npt.NDArray[np.float_]
+) -> float:
     """
     Compute a distance measure between two sets of points using a precomputed distance matrix.
     
@@ -18,16 +24,15 @@ def ps2psdist(Loc_dataset1, Loc_dataset2, DM):
       - Computing the norm of the difference between the means of the two groups.
     
     Parameters:
-        Loc_dataset1 : list or array-like
+        Loc_dataset1 (Union[List[int], npt.NDArray[np.int_]]): 
             Indices of points in the first group.
-        Loc_dataset2 : list or array-like
+        Loc_dataset2 (Union[List[int], npt.NDArray[np.int_]]): 
             Indices of points in the second group.
-        DM : 2D numpy array
+        DM (npt.NDArray[np.float_]): 
             Precomputed distance matrix where DM[i, j] is the distance between point i and point j.
     
     Returns:
-        Cdist : float
-            The computed distance measure between the two groups.
+        float: The computed distance measure between the two groups.
     """
     
     # If both groups contain exactly one point, one could simply return the distance between these two points.

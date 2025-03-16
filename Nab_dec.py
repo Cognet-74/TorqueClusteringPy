@@ -1,6 +1,8 @@
+from typing import Tuple
 import numpy as np
+import numpy.typing as npt
 
-def qac(sort_p):
+def qac(sort_p: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
     """
     Torque Clustering - Python Implementation matching MATLAB behavior
 
@@ -8,18 +10,18 @@ def qac(sort_p):
     Matches MATLAB's handling of division by zero which returns Inf.
 
     Args:
-        sort_p: A 1D numpy array representing the sorted input.
+        sort_p (npt.NDArray[np.float_]): A 1D numpy array representing the sorted input.
 
     Returns:
-        A 1D numpy array containing the ratios. The last element is NaN.
+        npt.NDArray[np.float_]: A 1D numpy array containing the ratios. The last element is NaN.
     """
     # Ensure input is a numpy array
-    sort_p = np.asarray(sort_p)
+    sort_p = np.asarray(sort_p, dtype=np.float_)
     
     p_num = len(sort_p)
     
     # Preallocate full result array (more efficient than appending later)
-    ind = np.zeros(p_num)
+    ind = np.zeros(p_num, dtype=np.float_)
     
     # Replace zeros with a very small value to mimic MATLAB's behavior
     # MATLAB automatically converts division by zero to Inf
@@ -36,7 +38,12 @@ def qac(sort_p):
     return ind
 
 
-def Nab_dec(p, mass, R, florderloc):
+def Nab_dec(
+    p: npt.NDArray[np.float_],
+    mass: npt.NDArray[np.float_],
+    R: npt.NDArray[np.float_],
+    florderloc: npt.NDArray[np.int_]
+) -> Tuple[npt.NDArray[np.int_], npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]:
     """
     Torque Clustering - Python Implementation matching MATLAB behavior
     
@@ -47,14 +54,17 @@ def Nab_dec(p, mass, R, florderloc):
     Python adaptation with MATLAB-matching behavior
     
     Args:
-        p: torque of each connection
-        mass: mass values
-        R: R values
-        florderloc: indices to exclude
+        p (npt.NDArray[np.float_]): torque of each connection
+        mass (npt.NDArray[np.float_]): mass values
+        R (npt.NDArray[np.float_]): R values
+        florderloc (npt.NDArray[np.int_]): indices to exclude
         
     Returns:
-        NAB: indices where the combined index equals the maximum value
-        resolution: indices that satisfy conditions a, b, and c
+        Tuple[npt.NDArray[np.int_], npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+            - NAB: indices where the combined index equals the maximum value
+            - resolution: indices that satisfy conditions a, b, and c
+            - R_mean: mean R value of non-excluded elements
+            - mass_mean: mean mass value of non-excluded elements
     """
     
     sort_p, order = np.sort(p)[::-1], np.argsort(p)[::-1]  # Sort in descending order
@@ -117,4 +127,4 @@ def Nab_dec(p, mass, R, florderloc):
         max_ind_val = np.nanmax(ind)
         NAB = np.where(ind == max_ind_val)[0]
     
-    return NAB, resolution
+    return NAB, resolution, R_mean, mass_mean

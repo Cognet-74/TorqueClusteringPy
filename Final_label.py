@@ -1,6 +1,11 @@
+from typing import Union, List
 import numpy as np
+import numpy.typing as npt
 
-def Final_label(labels1, labels2):
+def Final_label(
+    labels1: Union[List[int], npt.NDArray[np.int_]],
+    labels2: Union[List[int], npt.NDArray[np.int_]]
+) -> npt.NDArray[np.int_]:
     """
     FINAL_LABEL: Compute the final cluster labels by filtering out noise.
     
@@ -10,17 +15,16 @@ def Final_label(labels1, labels2):
     main subset are marked as noise (set to 0).
     
     Parameters:
-        labels1 : array-like of integers
-                  Cluster labels from method 1.
-        labels2 : array-like of integers
-                  Cluster labels from method 2.
+        labels1 (Union[List[int], npt.NDArray[np.int_]]): 
+            Cluster labels from method 1.
+        labels2 (Union[List[int], npt.NDArray[np.int_]]): 
+            Cluster labels from method 2.
                   
     Returns:
-        Idx : numpy array of integers
-              Final cluster labels, where noise points are assigned the label 0.
+        npt.NDArray[np.int_]: Final cluster labels, where noise points are assigned the label 0.
     """
-    labels1 = np.array(labels1)
-    labels2 = np.array(labels2)
+    labels1 = np.array(labels1, dtype=np.int_)
+    labels2 = np.array(labels2, dtype=np.int_)
     
     # Start with labels1 as the initial label assignment.
     Idx = labels1.copy()

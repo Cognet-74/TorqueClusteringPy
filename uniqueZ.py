@@ -1,7 +1,12 @@
+from typing import Tuple, Union
 import numpy as np
+import numpy.typing as npt
 from scipy import sparse
 
-def uniqueZ(Z, old_ljmat):
+def uniqueZ(
+    Z: npt.NDArray[np.float_],
+    old_ljmat: Union[npt.NDArray[np.float_], sparse.spmatrix]
+) -> Tuple[npt.NDArray[np.float_], Union[npt.NDArray[np.float_], sparse.spmatrix]]:
     """
     Generate a unique version of Z (newZ) based on the first two columns and update 
     the connectivity (or linkage) matrix old_ljmat based on columns 3 and 4 of Z.
@@ -22,22 +27,20 @@ def uniqueZ(Z, old_ljmat):
     
     Parameters
     ----------
-    Z : numpy.ndarray
+    Z : npt.NDArray[np.float_]
         A 2D array where:
             - Columns 0 and 1 (MATLAB columns 1 and 2) are used to determine uniqueness.
             - Columns 2 and 3 (MATLAB columns 3 and 4) are used to update old_ljmat.
-    old_ljmat : numpy.ndarray or scipy.sparse matrix
+    old_ljmat : Union[npt.NDArray[np.float_], sparse.spmatrix]
         A connectivity matrix that will be updated. For each row in Z (columns 3 and 4) that 
-        is not among the unique ones, the corresponding entries in old_ljmat are set to 0.
-        (Assumes that the indices in columns 3 and 4 are already 0-based. If they are 1-based,
-        subtract 1 when using them as indices.)
-    
+        is not unique, the corresponding entries in old_ljmat will be set to 0.
+        
     Returns
     -------
-    newZ : numpy.ndarray
-        A matrix containing the unique rows of Z (based on the first two columns).
-    ljmat : numpy.ndarray or scipy.sparse matrix
-        The updated connectivity matrix after processing.
+    Tuple[npt.NDArray[np.float_], Union[npt.NDArray[np.float_], sparse.spmatrix]]
+        A tuple containing:
+            - newZ: The unique version of Z
+            - old_ljmat: The updated connectivity matrix
     """
     # If Z is empty, set newZ to an empty array and return old_ljmat unchanged.
     if Z.size == 0:
@@ -75,13 +78,47 @@ def uniqueZ(Z, old_ljmat):
     Uni_sortrow_Y = sortrow_Y[order, :]
     
     # Check, for each row in sortrow_Y, whether it is a member of Uni_sortrow_Y.
-    def ismember_rows(A, B):
-        # Create a view of each row as a single element (of type void) for comparison.
+    def ismember_rows(
+        A: npt.NDArray[np.float_],
+        B: npt.NDArray[np.float_]
+    ) -> Tuple[npt.NDArray[np.bool_], npt.NDArray[np.int_]]:
+        """
+        Find rows in A that are members of B and return their indices.
+        
+        Parameters
+        ----------
+        A : npt.NDArray[np.float_]
+            First array for comparison
+        B : npt.NDArray[np.float_]
+            Second array to check membership against
+            
+        Returns
+        -------
+        Tuple[npt.NDArray[np.bool_], npt.NDArray[np.int_]]
+            A tuple containing:
+                - Boolean array indicating membership of each row in A
+                - Array of indices where each row in A is found in B (-1 if not found)
+        """
+        # Create a view of each row as a single element (of type void) for comparison
         A_view = np.ascontiguousarray(A).view(np.dtype((np.void, A.dtype.itemsize * A.shape[1])))
         B_view = np.ascontiguousarray(B).view(np.dtype((np.void, B.dtype.itemsize * B.shape[1])))
-        return np.in1d(A_view, B_view)
+        
+        # Find which rows in A are present in B
+        membership = np.in1d(A_view, B_view)
+        
+        # Initialize indices array with -1 (indicating "not found")
+        indices = np.full(len(A), -1, dtype=np.int_)
+        
+        # For each row in A that has a match in B, find its index in B
+        for i in np.where(membership)[0]:
+            # Find the first matching row in B
+            matches = np.where((B == A[i]).all(axis=1))[0]
+            if len(matches) > 0:
+                indices[i] = matches[0]
+        
+        return membership, indices
     
-    test = ismember_rows(sortrow_Y, Uni_sortrow_Y)
+    test, indices = ismember_rows(sortrow_Y, Uni_sortrow_Y)
     
     # Identify the rows in sortrow_Y that are NOT in Uni_sortrow_Y.
     rmv = sortrow_Y[~test, :]

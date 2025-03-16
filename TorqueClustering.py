@@ -1,3 +1,4 @@
+from typing import Tuple, Union, Optional
 import numpy as np
 import scipy.sparse
 import scipy.sparse.csgraph
@@ -9,27 +10,36 @@ from uniqueZ import uniqueZ
 from Nab_dec import Nab_dec
 from Final_label import Final_label
 
-def TorqueClustering(ALL_DM, K=0, isnoise=False, isfig=False):
+def TorqueClustering(
+    ALL_DM: Union[np.ndarray, scipy.sparse.spmatrix],
+    K: int = 0,
+    isnoise: bool = False,
+    isfig: bool = False
+) -> Tuple[np.ndarray, np.ndarray, int, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Implements the Torque Clustering algorithm for unsupervised clustering with improved sparse matrix handling
     while maintaining exact compatibility with the original MATLAB implementation.
 
     Args:
-        ALL_DM (numpy.ndarray or scipy.sparse matrix): Distance Matrix (n x n).
+        ALL_DM (Union[np.ndarray, scipy.sparse.spmatrix]): Distance Matrix (n x n).
         K (int, optional): Number of clusters if known (overrides automatic detection). Defaults to 0.
         isnoise (bool, optional): Enable noise detection. Defaults to False.
         isfig (bool, optional): Generate decision graph figure. Defaults to False.
 
     Returns:
-        Idx (numpy.ndarray): Cluster labels (1 x n).
-        Idx_with_noise (numpy.ndarray): Cluster labels with noise handling (1 x n) or empty array.
-        cutnum (int): Number of connections cut.
-        cutlink_ori (numpy.ndarray): Original cut links.
-        p (numpy.ndarray): Torque values for each connection.
-        firstlayer_loc_onsortp (numpy.ndarray): Indices of first layer connections sorted by torque.
-        mass (numpy.ndarray): Mass values for each connection.
-        R (numpy.ndarray): Distance squared values for each connection.
-        cutlinkpower_all (numpy.ndarray): All connection properties recorded during merging.
+        Tuple containing:
+            np.ndarray: Idx - Cluster labels (1 x n).
+            np.ndarray: Idx_with_noise - Cluster labels with noise handling (1 x n) or empty array.
+            int: cutnum - Number of connections cut.
+            np.ndarray: cutlink_ori - Original cut links.
+            np.ndarray: p - Torque values for each connection.
+            np.ndarray: firstlayer_loc_onsortp - Indices of first layer connections sorted by torque.
+            np.ndarray: mass - Mass values for each connection.
+            np.ndarray: R - Distance squared values for each connection.
+            np.ndarray: cutlinkpower_all - All connection properties recorded during merging.
+
+    Raises:
+        ValueError: If distance matrix is not provided or invalid.
     """
 
     # ---- Input Argument Handling ----
