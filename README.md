@@ -11,7 +11,9 @@ This repository is licensed under Creative Commons Attribution-NonCommercial-Sha
 
 ❌ Prohibition of Commercial Use
 This software MAY NOT be used for any commercial purposes.
+
 Any form of selling, paid services, SaaS deployment, or monetization based on this repository is strictly prohibited.
+
 🔄 Forking Rules
 You are allowed to fork this repository, but you MUST retain this exact license (CC BY-NC-SA 4.0).
 Proper attribution to the original author is required when using, modifying, or redistributing this repository.
