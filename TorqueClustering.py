@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Optional, List
+from typing import Tuple, Union, Optional, List, Dict, Any
 import numpy as np
 import scipy.sparse
 import scipy.sparse.csgraph
@@ -9,6 +9,7 @@ from Updateljmat import Updateljmat
 from uniqueZ import uniqueZ
 from Nab_dec import Nab_dec
 from Final_label import Final_label
+from dataset_config import get_recommended_config, apply_config, print_config_summary
 
 def TorqueClustering(
     ALL_DM: Union[np.ndarray, scipy.sparse.spmatrix],
@@ -17,8 +18,10 @@ def TorqueClustering(
     isfig: bool = False,
     matlab_compatibility: bool = True,
     use_std_adjustment: bool = True,
-    adjustment_factor: float = 0.5
-) -> Tuple[np.ndarray, np.ndarray, int, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    adjustment_factor: float = 0.5,
+    dataset_type: Optional[str] = None,
+    auto_config: bool = True
+) -> Tuple[np.ndarray, np.ndarray, int, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
     """
     Implements the Torque Clustering algorithm for unsupervised clustering with improved sparse matrix handling
     while maintaining exact compatibility with the original MATLAB implementation.
@@ -31,6 +34,8 @@ def TorqueClustering(
         matlab_compatibility (bool, optional): Enable strict MATLAB compatibility mode. Defaults to True.
         use_std_adjustment (bool, optional): Whether to use standard deviation for threshold adjustment. Defaults to True.
         adjustment_factor (float, optional): Factor to multiply standard deviation for threshold adjustment. Defaults to 0.5.
+        dataset_type (Optional[str], optional): Force a specific dataset type configuration. Defaults to None.
+        auto_config (bool, optional): Whether to automatically configure parameters based on dataset characteristics. Defaults to True.
 
     Returns:
         Tuple containing:
@@ -43,6 +48,7 @@ def TorqueClustering(
             np.ndarray: mass - Mass values for each connection.
             np.ndarray: R - Distance squared values for each connection.
             np.ndarray: cutlinkpower_all - All connection properties recorded during merging.
+            dict: diagnostics - Dictionary containing threshold calculations and intermediate values
 
     Raises:
         ValueError: If distance matrix is not provided or invalid.
@@ -66,6 +72,36 @@ def TorqueClustering(
     # Convert to float64 for matching MATLAB's default precision if not already
     if isinstance(ALL_DM, np.ndarray) and ALL_DM.dtype != np.float64:
         ALL_DM = np.float64(ALL_DM)
+
+    # ---- Apply Dataset-Specific Configuration ----
+    if auto_config:
+        # Get recommended configuration based on dataset characteristics
+        config = get_recommended_config(ALL_DM, override_type=dataset_type)
+        # Print configuration summary
+        print_config_summary(config)
+        # Apply configuration
+        use_std_adjustment, adjustment_factor, isnoise = apply_config(ALL_DM, config)
+    
+    # Initialize diagnostics dictionary
+    diagnostics = {
+        'parameters': {
+            'K': K,
+            'isnoise': isnoise,
+            'use_std_adjustment': use_std_adjustment,
+            'adjustment_factor': adjustment_factor,
+            'matlab_compatibility': matlab_compatibility,
+            'auto_config': auto_config
+        },
+        'input_matrix': {
+            'shape': ALL_DM.shape,
+            'is_sparse': scipy.sparse.issparse(ALL_DM),
+            'dtype': str(ALL_DM.dtype)
+        }
+    }
+    
+    # If auto_config was used, include the configuration details
+    if auto_config:
+        diagnostics['configuration'] = config
 
     # Convert to sparse matrix if dense and store the format type
     is_input_sparse = scipy.sparse.issparse(ALL_DM)
@@ -285,7 +321,20 @@ def TorqueClustering(
         cutlinkpower_all_np = np.array([], dtype=np.float64)
         if matlab_compatibility:
             np.seterr(**old_settings)  # Restore original NumPy settings
-        return np.zeros(datanum, dtype=np.int64), np.array([], dtype=np.int64), 0, np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64)
+        return np.zeros(datanum, dtype=np.int64), np.array([], dtype=np.int64), 0, np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64), np.array([], dtype=np.float64), {
+            'parameters': {
+                'K': K,
+                'isnoise': isnoise,
+                'use_std_adjustment': use_std_adjustment,
+                'adjustment_factor': adjustment_factor,
+                'matlab_compatibility': matlab_compatibility
+            },
+            'input_matrix': {
+                'shape': ALL_DM.shape,
+                'is_sparse': scipy.sparse.issparse(ALL_DM),
+                'dtype': str(ALL_DM.dtype)
+            }
+        }
     
     # ---- Step 4: Define Torque and Compute Cluster Properties ----
     # Use explicit double precision for all calculations
@@ -516,7 +565,7 @@ def TorqueClustering(
     if matlab_compatibility:
         np.seterr(**old_settings)
         
-    return Idx, Idx_with_noise, cutnum, cutlink_ori, p, firstlayer_loc_onsortp, mass, R, cutlinkpower_all_np
+    return Idx, Idx_with_noise, cutnum, cutlink_ori, p, firstlayer_loc_onsortp, mass, R, cutlinkpower_all_np, diagnostics
 
 # Helper validation function to compare outputs with MATLAB
 def validate_against_matlab(
