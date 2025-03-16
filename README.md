@@ -21,101 +21,74 @@ You are allowed to fork this repository, but you MUST retain this exact license 
 **
 # TorqueClustering Results (2025 March 16 status)
 
-## Summary Table
+# Comprehensive Comparison: TorqueClustering Results vs. Dataset Statistics from paper
 
-| Dataset | Clusters Found | NMI | AC | AMI | Output File |
-|---------|---------------|-----|----|----|-------------|
-| Highly overlapping | 3 | 0.4924 | 0.2052 | 0.2028 | Fig_S3A.png |
-| FLAME | 7 | 0.6068 | 0.4833 | 0.4198 | Fig_S3B.png |
-| Spectral-path | 7 | 0.5272 | 0.4231 | 0.3551 | Fig_S3C.png |
-| Unbalanced | 2 | 0.7132 | 0.9000 | 0.0000 | Fig_S3D.png |
-| Noisy | 54 | - | - | - | Fig_S3E.png |
-| Heterogeneous geometric | 4 | 0.8935 | 0.8550 | 0.6297 | Fig_S3F.png |
-| Multi-objective 1 | 2 | 0.2816 | 0.3750 | NaN* | Fig_S3G.png |
-| Multi-objective 2 | 15 | 0.7903 | 0.6490 | 0.6115 | Fig_S3H.png |
-| Multi-objective 3 | 2 | 0.6386 | 0.6667 | NaN* | Fig_S3I.png |
-| RNA-Seq | 2 | 0.0184 | 0.0087 | NaN* | - |
-| CMU-PIE | 12 | 0.5739 | 0.1345 | 0.3339 | - |
+| Dataset | Instances | Dimensions | Expected Clusters | Found Clusters | NMI | AC | AMI | Status |
+|---------|-----------|------------|-------------------|----------------|-----|----|----|--------|
+| Highly overlapping | 5000 | 2 | 15 | 3 | 0.4924 | 0.2052 | 0.2028 | ✅ Processed |
+| FLAME | 240 | 2 | 2 | 7 | 0.6068 | 0.4833 | 0.4198 | ✅ Processed |
+| Spectral-path | 312 | 2 | 3 | 7 | 0.5272 | 0.4231 | 0.3551 | ✅ Processed |
+| Unbalanced | 2000 | 2 | 3 | 2 | 0.7132 | 0.9000 | 0.0000 | ✅ Processed |
+| Noisy | 4000 | 2 | 5 | 54 | - | - | - | ✅ Processed (no ground truth) |
+| Heterogeneous geometric | 400 | 2 | 3 | 4 | 0.8935 | 0.8550 | 0.6297 | ✅ Processed |
+| Multi-objective 1 | 1000 | 2 | 4 | 2 | 0.2816 | 0.3750 | NaN* | ✅ Processed |
+| Multi-objective 2 | 1000 | 2 | 4 | 15 | 0.7903 | 0.6490 | 0.6115 | ✅ Processed |
+| Multi-objective 3 | 1500 | 2 | 6 | 2 | 0.6386 | 0.6667 | NaN* | ✅ Processed |
+| OFD-F100 | 100 | 10304 | 10 | - | - | - | - | ❌ Not in results |
+| MNIST | 10000 | 4096 | 10 | - | - | - | - | ❌ Data type error (MNIST70k) |
+| COIL-100 | 7200 | 49152 | 100 | - | - | - | - | ❌ Incomplete processing |
+| Shuttle | 58000 | 9 | 7 | - | - | - | - | ❌ Memory allocation error |
+| RNA-Seq | 801 | 20531 | 5 | 2 | 0.0184 | 0.0087 | NaN* | ✅ Processed |
+| Haberman | 306 | 3 | 2 | - | - | - | - | ❌ File not found |
+| Zoo | 101 | 16 | 7 | - | - | - | - | ❌ Data type error |
+| S.disease | - | - | - | - | - | - | - | ❌ Data type error |
+| Cell.track | - | - | - | - | - | - | - | ❌ Data type error |
+| CMU-PIE | - | - | - | 12 | 0.5739 | 0.1345 | 0.3339 | ✅ Processed (not in provided stats) |
+| CMU-PIE 11k | - | - | - | - | - | - | - | ❌ Data type error |
+| Reuters | - | - | - | - | - | - | - | ❌ Data type error |
+| YTF | - | - | - | - | - | - | - | ❌ Data type error |
+| Atom | 800 | 3 | 2 | - | - | - | - | ❌ Not in results |
 
 *NaN values for AMI occurred when EMI was very small (< 2.22e-16); NMI was used instead.
 
-## Hierarchical Clustering Details
+## Summary of Findings
 
-For each dataset, the algorithm performed hierarchical clustering with these layer counts:
+### Successfully Processed Datasets (10/20)
 
-### Highly overlapping
-- Layer 1: 1530 clusters
-- Layer 2: 151 clusters
-- Layer 3: 2 clusters
-- Layer 4: 1 cluster
+- **Matching cluster count**: None of the processed datasets found the exact number of expected clusters
+- **Close match**: Heterogeneous geometric (found 4 vs. expected 3), Unbalanced (found 2 vs. expected 3)
+- **Largest discrepancies**: 
+  - Highly overlapping: Found 3 vs. expected 15
+  - Noisy: Found 54 vs. expected 5
+  - Multi-objective 2: Found 15 vs. expected 4
 
-### FLAME
-- Layer 1: 63 clusters
-- Layer 2: 6 clusters
-- Layer 3: 1 cluster
+### Failed Processing (10/20)
 
-### Spectral-path
-- Layer 1: 113 clusters
-- Layer 2: 22 clusters
-- Layer 3: 1 cluster
+- **Data type casting errors**: 8 datasets (MNIST70k, Zoo, S.disease, Cell.track, CMU-PIE 11k, Reuters, YTF, COIL-100)
+- **Memory allocation error**: 1 dataset (Shuttle)
+- **File not found**: 1 dataset (Haberman)
 
-### Unbalanced
-- Layer 1: 626 clusters
-- Layer 2: 81 clusters
-- Layer 3: 1 cluster
+### Performance Metrics
 
-### Noisy
-- Layer 1: 1217 clusters
-- Layer 2: 150 clusters
-- Layer 3: 1 cluster
+- **Best NMI**: Heterogeneous geometric (0.8935)
+- **Best AC**: Unbalanced (0.9000)
+- **Worst performer**: RNA-Seq (NMI: 0.0184, AC: 0.0087)
 
-### Heterogeneous geometric
-- Layer 1: 126 clusters
-- Layer 2: 16 clusters
-- Layer 3: 1 cluster
+### Additional Datasets in Results
 
-### Multi-objective 1
-- Layer 1: 342 clusters
-- Layer 2: 57 clusters
-- Layer 3: 3 clusters
-- Layer 4: 1 cluster
+Your TorqueClustering run included several datasets not mentioned in the provided statistics:
+- CMU-PIE
+- S.disease
+- Cell.track
+- CMU-PIE 11k
+- Reuters
+- YTF
 
-### Multi-objective 2
-- Layer 1: 332 clusters
-- Layer 2: 59 clusters
-- Layer 3: 2 clusters
-- Layer 4: 1 cluster
+### Missing Datasets from  Results
 
-### Multi-objective 3
-- Layer 1: 164 clusters
-- Layer 2: 20 clusters
-- Layer 3: 2 clusters
-- Layer 4: 1 cluster
-
-### RNA-Seq
-- Layer 1: 80 clusters
-- Layer 2: 2 clusters
-- Layer 3: 1 cluster
-
-### CMU-PIE
-- Layer 1: 799 clusters
-- Layer 2: 92 clusters
-- Layer 3: 2 clusters
-- Layer 4: 1 cluster
-
-## Errors
-
-The following datasets encountered errors during processing:
-
-1. **YTF dataset**: Cannot cast array data from dtype([('data', 'O'), ('datalabels', 'O')]) to dtype('float64') according to the rule 'unsafe'
-
-2. **MNIST70k dataset**: Cannot cast array data from dtype([('data', 'O'), ('datalabels', 'O')]) to dtype('float64') according to the rule 'unsafe'
-
-3. **Shuttle dataset**: Unable to allocate 50.1 GiB for an array with shape (3363957443, 2) and data type int64
-
-4. **Haberman dataset**: data\haberman.txt not found
-
-5. **Zoo dataset**: Cannot cast array data from dtype([('data', 'O'), ('datalabels', 'O')]) to dtype('float64') according to the rule 'unsafe'
+Datasets in the provided statistics but not processed in your results:
+- OFD-F100
+- Atom
 
 6. **S.disease dataset**: Cannot cast array data from dtype([('data', 'O'), ('datalabels', 'O')]) to dtype('float64') according to the rule 'unsafe'
 
