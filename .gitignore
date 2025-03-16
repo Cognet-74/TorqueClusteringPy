@@ -1,1 +1,27 @@
 data/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+venv/
+env/
+.env/
+
+# Build and distribution
+dist/
+build/
+*.egg-info/
+
+# Logs and temporary files
+*.log
+*.tmp
