@@ -10,6 +10,30 @@ from uniqueZ import uniqueZ
 from Nab_dec import Nab_dec
 from Final_label import Final_label
 
+def normalize_distance_matrix(distance_matrix: np.ndarray) -> np.ndarray:
+    """
+    Normalize distance matrix for improved numerical stability.
+    
+    Args:
+        distance_matrix: Input distance matrix
+        
+    Returns:
+        Normalized distance matrix
+    """
+    # Handle zero distances
+    np.fill_diagonal(distance_matrix, 0.0)
+    
+    # Scale distances to [0, 1] range
+    if distance_matrix.size > 0:
+        min_dist = np.min(distance_matrix[distance_matrix > 0])
+        max_dist = np.max(distance_matrix)
+        if max_dist > min_dist:
+            # Avoid division by zero
+            distance_matrix = (distance_matrix - min_dist) / (max_dist - min_dist)
+            distance_matrix[distance_matrix < 0] = 0  # Clean up any negative values
+    
+    return distance_matrix
+
 def TorqueClustering(
     ALL_DM: Union[np.ndarray, scipy.sparse.spmatrix],
     K: int = 0,
@@ -62,6 +86,23 @@ def TorqueClustering(
     # Convert to float64 for matching MATLAB's default precision if not already
     if isinstance(ALL_DM, np.ndarray) and ALL_DM.dtype != np.float64:
         ALL_DM = np.float64(ALL_DM)
+
+    # Normalize distance matrix for improved stability
+    if isinstance(ALL_DM, np.ndarray):
+        ALL_DM = normalize_distance_matrix(ALL_DM)
+    else:
+        # Convert sparse to dense for normalization if small enough
+        if ALL_DM.size <= 1e8:  # Adjust threshold based on available memory
+            ALL_DM = normalize_distance_matrix(ALL_DM.toarray())
+            ALL_DM = scipy.sparse.csr_matrix(ALL_DM)
+        else:
+            # For very large matrices, normalize in chunks
+            chunk_size = 1000
+            for i in range(0, ALL_DM.shape[0], chunk_size):
+                end = min(i + chunk_size, ALL_DM.shape[0])
+                chunk = ALL_DM[i:end].toarray()
+                chunk = normalize_distance_matrix(chunk)
+                ALL_DM[i:end] = scipy.sparse.csr_matrix(chunk)
 
     # Convert to sparse matrix if dense and store the format type
     is_input_sparse = scipy.sparse.issparse(ALL_DM)

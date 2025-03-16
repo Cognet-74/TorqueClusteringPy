@@ -294,7 +294,7 @@ def Nab_dec(
     sort_mass_1 = sort_mass.copy()
     sort_mass_1[florderloc] = np.nan
     
-    # Calculate quality ratio
+    # Calculate quality ratio with improved stability
     ind1 = qac(sort_p)
     ind1[florderloc] = np.nan
     
@@ -305,41 +305,39 @@ def Nab_dec(
     # Calculate non-excluded indices using exact MATLAB setdiff behavior
     non_florderloc = matlab_setdiff(loc, florderloc)
     
-    # Calculate means of non-excluded elements
+    # Calculate means with improved stability
     R_mean = matlab_mean(sort_R[non_florderloc])
     mass_mean = matlab_mean(sort_mass[non_florderloc])
     p_mean = matlab_mean(sort_p[non_florderloc])
     
-    # Identify points that meet criteria
-    a = (sort_R_1 >= R_mean)
-    b = (sort_mass_1 >= mass_mean)
-    c = (sort_p_1 >= p_mean)
+    # Add stability factors
+    R_std = np.nanstd(sort_R[non_florderloc])
+    mass_std = np.nanstd(sort_mass[non_florderloc])
+    p_std = np.nanstd(sort_p[non_florderloc])
     
-    # Combined criteria using MATLAB's logical AND behavior
-    combined = matlab_logical_and(a, b, c)
+    # Adjust thresholds using standard deviation
+    R_threshold = R_mean - 0.5 * R_std
+    mass_threshold = mass_mean - 0.5 * mass_std
+    p_threshold = p_mean - 0.5 * p_std
     
-    # In MATLAB: resolution=loc((a&b&c)');
-    # The apostrophe (') is matrix transpose, so we need to match this behavior
-    combined_transposed = combined.T
+    # Identify points that meet criteria with adjusted thresholds
+    a = (sort_R_1 >= R_threshold)
+    b = (sort_mass_1 >= mass_threshold)
+    c = (sort_p_1 >= p_threshold)
     
-    # Get indices that meet criteria
-    resolution = loc[combined_transposed]
+    # Combine criteria with improved noise handling
+    d = a & b & c
     
-    # Calculate the final index based on resolution
+    # Find indices that satisfy all criteria
+    resolution = np.where(d)[0]
+    
+    # Calculate combined index for cluster determination
     if len(resolution) > 0:
-        ind2 = np.zeros(num_p)
-        for i in range(num_p):
-            gd = np.arange(i + 1)  # Range from 0 to i (inclusive)
-            common_cn = matlab_intersect(gd, resolution)
-            ind2[i] = len(common_cn) / len(resolution)
-        
-        # Combine indicators
-        ind = ind1 * ind2
+        combined_index = ind1[resolution]
+        max_index = np.nanmax(combined_index)
+        NAB = resolution[combined_index == max_index]
     else:
-        ind = ind1
-    
-    # Find maximum value indices using MATLAB's find(ind==max(ind)) behavior
-    NAB = matlab_find_max(ind)
+        NAB = np.array([], dtype=np.int_)
     
     return NAB, resolution
 
