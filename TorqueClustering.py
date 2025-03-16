@@ -15,7 +15,9 @@ def TorqueClustering(
     K: int = 0,
     isnoise: bool = False,
     isfig: bool = False,
-    matlab_compatibility: bool = True
+    matlab_compatibility: bool = True,
+    use_std_adjustment: bool = True,
+    adjustment_factor: float = 0.5
 ) -> Tuple[np.ndarray, np.ndarray, int, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Implements the Torque Clustering algorithm for unsupervised clustering with improved sparse matrix handling
@@ -27,6 +29,8 @@ def TorqueClustering(
         isnoise (bool, optional): Enable noise detection. Defaults to False.
         isfig (bool, optional): Generate decision graph figure. Defaults to False.
         matlab_compatibility (bool, optional): Enable strict MATLAB compatibility mode. Defaults to True.
+        use_std_adjustment (bool, optional): Whether to use standard deviation for threshold adjustment. Defaults to True.
+        adjustment_factor (float, optional): Factor to multiply standard deviation for threshold adjustment. Defaults to 0.5.
 
     Returns:
         Tuple containing:
@@ -314,7 +318,7 @@ def TorqueClustering(
     # ---- Step 7: Determine Cutoff Points for Clusters (Torque Gap or User-defined K) ----
     if K == 0:
         # The key function for determining number of clusters - ensure it's precise
-        NAB = Nab_dec(p, mass, R, firstlayer_loc_onsortp)
+        NAB = Nab_dec(p, mass, R, firstlayer_loc_onsortp, use_std_adjustment, adjustment_factor)
         # Handle exactly as MATLAB does:
         # If NAB is empty, use a default value
         if len(NAB) == 0:

@@ -259,66 +259,54 @@ def Nab_dec(
     p: npt.NDArray[np.float_],
     mass: npt.NDArray[np.float_],
     R: npt.NDArray[np.float_],
-    florderloc: npt.NDArray[np.int_]
+    florderloc: npt.NDArray[np.int_],
+    use_std_adjustment: bool = True,
+    adjustment_factor: float = 0.5
 ) -> Tuple[npt.NDArray[np.int_], npt.NDArray[np.int_]]:
     """
-    Torque Clustering implementation with exact MATLAB matching behavior.
+    Determine the number of abnormal merges to cut based on torque analysis.
     
     Args:
-        p: Torque of each connection
-        mass: Mass values
-        R: R values
-        florderloc: Indices to exclude
-        
+        p: Array of torque values
+        mass: Array of mass values
+        R: Array of distance values
+        florderloc: Array of first layer location indices
+        use_std_adjustment: Whether to use standard deviation for threshold adjustment (default: True)
+        adjustment_factor: Factor to multiply standard deviation for threshold adjustment (default: 0.5)
+    
     Returns:
-        Tuple containing:
-            - NAB: Indices where the combined index equals the maximum value
-            - resolution: Indices that satisfy the criteria
+        Tuple of (NAB, resolution) arrays
     """
-    # Convert arrays to float64 for consistency with MATLAB
-    p = np.asarray(p, dtype=np.float64)
-    mass = np.asarray(mass, dtype=np.float64)
-    R = np.asarray(R, dtype=np.float64)
-    florderloc = np.asarray(florderloc, dtype=np.int_)
+    # Convert inputs to float64 for consistency with MATLAB
+    p = np.float64(p)
+    mass = np.float64(mass)
+    R = np.float64(R)
     
-    # Sort in descending order with stable sort
-    sort_p, order = matlab_sort(p, 'descend')
-    sort_R = R[order]
-    sort_mass = mass[order]
+    # Sort values in descending order
+    sort_p_1, ind1 = matlab_sort(p)
+    sort_mass_1, _ = matlab_sort(mass)
+    sort_R_1, _ = matlab_sort(R)
     
-    # Create copies for modification
-    sort_p_1 = sort_p.copy()
-    sort_p_1[florderloc] = np.nan
-    sort_R_1 = sort_R.copy()
-    sort_R_1[florderloc] = np.nan
-    sort_mass_1 = sort_mass.copy()
-    sort_mass_1[florderloc] = np.nan
+    # Calculate means
+    p_mean = matlab_mean(sort_p_1)
+    mass_mean = matlab_mean(sort_mass_1)
+    R_mean = matlab_mean(sort_R_1)
     
-    # Calculate quality ratio with improved stability
-    ind1 = qac(sort_p)
-    ind1[florderloc] = np.nan
-    
-    # Create index array and find non-excluded indices
-    num_p = len(p)
-    loc = np.arange(num_p)
-    
-    # Calculate non-excluded indices using exact MATLAB setdiff behavior
-    non_florderloc = matlab_setdiff(loc, florderloc)
-    
-    # Calculate means with improved stability
-    R_mean = matlab_mean(sort_R[non_florderloc])
-    mass_mean = matlab_mean(sort_mass[non_florderloc])
-    p_mean = matlab_mean(sort_p[non_florderloc])
-    
-    # Add stability factors
-    R_std = np.nanstd(sort_R[non_florderloc])
-    mass_std = np.nanstd(sort_mass[non_florderloc])
-    p_std = np.nanstd(sort_p[non_florderloc])
-    
-    # Adjust thresholds using standard deviation
-    R_threshold = R_mean - 0.5 * R_std
-    mass_threshold = mass_mean - 0.5 * mass_std
-    p_threshold = p_mean - 0.5 * p_std
+    # Calculate standard deviations if using std adjustment
+    if use_std_adjustment:
+        p_std = np.nanstd(sort_p_1)
+        mass_std = np.nanstd(sort_mass_1)
+        R_std = np.nanstd(sort_R_1)
+        
+        # Adjust thresholds using standard deviation
+        R_threshold = R_mean - adjustment_factor * R_std
+        mass_threshold = mass_mean - adjustment_factor * mass_std
+        p_threshold = p_mean - adjustment_factor * p_std
+    else:
+        # Use means directly as thresholds
+        R_threshold = R_mean
+        mass_threshold = mass_mean
+        p_threshold = p_mean
     
     # Identify points that meet criteria with adjusted thresholds
     a = (sort_R_1 >= R_threshold)
@@ -326,7 +314,7 @@ def Nab_dec(
     c = (sort_p_1 >= p_threshold)
     
     # Combine criteria with improved noise handling
-    d = a & b & c
+    d = matlab_logical_and(a, b, c)
     
     # Find indices that satisfy all criteria
     resolution = np.where(d)[0]
