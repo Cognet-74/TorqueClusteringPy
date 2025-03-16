@@ -18,8 +18,8 @@ Any form of selling, paid services, SaaS deployment, or monetization based on th
 You are allowed to fork this repository, but you MUST retain this exact license (CC BY-NC-SA 4.0).¨
 
 
-**Current status of running the code
-# TorqueClustering Results
+**
+# TorqueClustering Results (2025 March 16 status)
 
 ## Summary Table
 
