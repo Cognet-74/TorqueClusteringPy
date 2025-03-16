@@ -3,5 +3,5 @@ This is a work-in-progress to replicate the TorqueClustering algorithm described
 
 It performs autonomous clustering by fast find of mass and distance peaks.
 
-current status: core algorithm is working but still dealing with issues in replicating all results for the complete dataset.
+current status: core algorithm is mostly working but still dealing with issues in replicating all results for the complete dataset.
 
