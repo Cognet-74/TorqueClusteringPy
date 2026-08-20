@@ -1,3 +1,5 @@
+
+
 # TorqueClusteringPy
 
 A Python implementation of the Torque Clustering algorithm, designed for efficient and accurate clustering of various datasets. This implementation maintains exact compatibility with the original MATLAB version while leveraging Python's scientific computing capabilities.
@@ -184,6 +186,7 @@ The package includes several evaluation metrics:
 
 2. **AMI (Adjusted Mutual Information)**
    - Adjusts for chance
+   - Range: [-1, 1]
    - Implementation in `ami.py`
 
 3. **AC (Accuracy)**
